@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beat Your Boyfriend: Pixel Edition</title>
+    <link rel="stylesheet" href="index.css">
+  </head>
+  <body>
+
+  <div id="damage-flash"></div>
+  <div id="cursor">🍳</div>
+
+  <div id="screen">
+
+    <!-- TITLE SCREEN -->
+    <div id="title-screen">
+      <div class="pixel-border">
+        <div class="pixel-hearts">💖💢💖</div>
+        <div class="title-main">BEAT YOUR<br>BOYFRIEND</div>
+        <div class="title-sub">✨ PIXEL EDITION ✨</div>
+        <div style="margin: 24px 0; font-size: 9px; color: #aaa; line-height: 2;">
+          A healthy stress relief game<br>
+          <span style="color: var(--pink);">doctor recommended 💊</span>
+        </div>
+        <button class="btn" onclick="showWeaponSelect()">▶ START GAME</button>
+        <div style="margin-top: 16px; font-size: 7px; color: #555;">
+          click anywhere to swing!
+        </div>
+      </div>
+    </div>
+
+    <!-- WEAPON SELECT -->
+    <div id="weapon-screen" style="display:none;">
+      <div class="pixel-border">
+        <div class="screen-title">⚔️ CHOOSE YOUR WEAPON</div>
+        <div class="weapon-grid">
+          <div class="weapon-card" onclick="selectWeapon('🍳','Frying Pan')" id="w1">
+            <div class="weapon-emoji">🍳</div>
+            <div class="weapon-name">FRYING PAN</div>
+          </div>
+          <div class="weapon-card" onclick="selectWeapon('👟','Tsinelas')" id="w2">
+            <div class="weapon-emoji">👟</div>
+            <div class="weapon-name">TSINELAS</div>
+          </div>
+          <div class="weapon-card" onclick="selectWeapon('🔫','Toy Gun')" id="w3">
+            <div class="weapon-emoji">🔫</div>
+            <div class="weapon-name">TOY GUN</div>
+          </div>
+        </div>
+
+        <!-- SPECIAL WEAPON DIVIDER -->
+        <div class="special-divider">
+          <span>⚠️ SPECIAL WEAPON ⚠️</span>
+        </div>
+
+        <div class="weapon-grid">
+          <div class="weapon-card special-card" onclick="selectWeapon('💣','Bomb')" id="w4">
+            <div class="weapon-emoji">💣</div>
+            <div class="weapon-name">BOMB</div>
+            <div class="weapon-tag">∞ USES • AOE</div>
+          </div>
+        </div>
+        <button class="btn" onclick="showTitle()">◀ BACK</button>
+        <button class="btn" onclick="showUploadScreen()" id="next-btn-weapon">NEXT ▶</button>
+      </div>
+    </div>
+
+    <!-- UPLOAD SCREEN -->
+    <div id="upload-screen" style="display:none;">
+      <div class="pixel-border">
+        <div class="screen-title">📸 WHO ARE WE BEATING?</div>
+
+        <div class="upload-area" onclick="document.getElementById('file-input').click()">
+          <div class="upload-icon">📷</div>
+          <div>UPLOAD A PHOTO</div>
+          <div style="font-size:7px;color:#888;">png, jpg, gif</div>
+        </div>
+        <input type="file" id="file-input" accept="image/*" onchange="handleUpload(event)">
+
+        <div class="or-text">— OR CHOOSE A DEFAULT TARGET —</div>
+
+        <div class="default-targets">
+          <div class="default-target" onclick="selectDefault('😈')" id="d1">😈</div>
+          <div class="default-target" onclick="selectDefault('🤡')" id="d2">🤡</div>
+          <div class="default-target" onclick="selectDefault('👦')" id="d3">👦</div>
+          <div class="default-target" onclick="selectDefault('🐸')" id="d4">🐸</div>
+          <div class="default-target" onclick="selectDefault('💀')" id="d5">💀</div>
+        </div>
+
+        <button class="btn" onclick="showWeaponSelect()">◀ BACK</button>
+        <button class="btn" onclick="startGame()" id="next-btn-upload" style="margin-top:16px;">LET'S GO! ▶</button>
+      </div>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="game-screen">
+      <div class="city-layer-far" id="city-far"></div>
+      <div class="city-layer-near" id="city-near"></div>
+      <div class="city-ground"></div>
+
+      <div id="hud">
+        <div class="health-bar-container">
+          <span>❤️ HP</span>
+          <div class="health-bar-bg"><div id="health-bar"></div></div>
+        </div>
+        <div id="score-display">⭐ 0</div>
+        <div id="weapon-display">🍳</div>
+        <div id="timer-display">⏱ 60</div>
+
+        <div id="bomb-display" style="display:none;">💣 ∞</div>
+
+        <!-- BURGER BUTTON GOES HERE INSIDE HUD -->
+        <div id="burger-btn" onclick="togglePause()">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+
+       <!-- PAUSE MENU STAYS OUTSIDE HUD -->
+      <div id="pause-menu" style="display:none;">
+        <div class="pixel-border">
+          <div class="screen-title">⏸ PAUSED</div>
+          <button class="btn" onclick="resumeGame()">▶ RESUME</button>
+          <button class="btn" onclick="restartGame()">🔄 PLAY AGAIN</button>
+          <button class="btn" onclick="showTitle()">🏠 MAIN MENU</button>
+        </div>
+      </div>
+
+      <div id="combo-text" class="combo-display"></div>
+
+      <div id="target">
+        <div id="target-emoji-display" style="display:none;"></div>
+        <img id="target-img" src="" alt="target" style="display:none;" draggable="false">
+        <div class="target-label">💢 TAP ME! 💢</div>
+        <div id="bubble" style="display:none;">
+          <div id="bubble-text">😝</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GAME OVER SCREEN -->
+    <div id="gameover-screen" style="display:none;">
+      <div class="pixel-border">
+        <div class="gameover-title" id="gameover-title">TIME'S UP! 💢</div>
+        <div class="grade" id="grade-display">🌸</div>
+        <div class="final-score" id="final-score-display">SCORE: 0</div>
+        <div id="grade-msg" style="font-size:8px;color:#aaa;line-height:2;margin:12px 0;"></div>
+        <button class="btn" onclick="restartGame()">🔄 PLAY AGAIN</button>
+        <button class="btn" onclick="showTitle()" style="margin-top:8px;">🏠 MAIN MENU</button>
+      </div>
+    </div>
+
+  </div>
+  <script src="index.js"></script>
+  </body>
+</html>

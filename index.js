@@ -44,8 +44,9 @@ function selectWeapon(emoji, name) {
   selectedWeaponName = name;
   isBomb = (emoji === '💣');
   document.getElementById('cursor').textContent = emoji;
+  document.getElementById('weapon-display').textContent = emoji; // ADD THIS
   document.querySelectorAll('.weapon-card').forEach(c => c.classList.remove('selected'));
-  const map = {'🍳':'w1','👟':'w2','🔫':'w3','💣':'w4'};
+  const map = {'🍳':'w1','🩴':'w2','🤚':'w3','💣':'w4'};
   document.getElementById(map[emoji]).classList.add('selected');
 }
 
@@ -97,7 +98,7 @@ function startGame() {
   // Reset state
   score = 0; health = 1000; timeLeft = 60; combo = 0;
 
-  document.getElementById('bomb-display').style.display = isBomb ? 'block' : 'none';
+  document.getElementById('bomb-display').style.display = 'none';
 
   updateHUD();
   gameRunning = true;
@@ -189,8 +190,18 @@ function handleClick(e) {
     throwBomb(e.clientX, e.clientY);
     return;
   }
-  if (selectedWeapon === '🔫') {
-    shootBullet(e.clientX, e.clientY);
+
+  if (selectedWeapon === '🤚') {
+    doSlap(e.clientX, e.clientY);
+    return;
+  }
+
+  if (selectedWeapon === '🍳') {
+    doPan(e.clientX, e.clientY);
+    return;
+  }
+  if (selectedWeapon === '🩴') {
+    doSlipper(e.clientX, e.clientY);
     return;
   }
 
@@ -376,6 +387,7 @@ function resumeGame() {
 }
 
 function handleTouch(e) {
+  if (e.target.closest('#burger-btn') || e.target.closest('#pause-menu')) return;
   e.preventDefault();
   const touch = e.touches[0];
   handleClick({ clientX: touch.clientX, clientY: touch.clientY });
@@ -551,74 +563,254 @@ function triggerBulletHit(x, y) {
   if (health <= 0) { score += 500; endGame(true); }
 }
 
-// Call this once on page load
-function buildCityScape() {
-  function makeBuildings(count, minW, maxW, minH, maxH, color, svgW, svgH) {
-    let rects = '';
-    let x = 0;
-    for (let i = 0; i < count; i++) {
-      const w = minW + Math.floor(Math.random() * (maxW - minW));
-      const h = minH + Math.floor(Math.random() * (maxH - minH));
-      rects += `<rect x="${x}" y="${svgH - h}" width="${w}" height="${h}" fill="${color}"/>`;
-      for (let wx = x + 4; wx < x + w - 4; wx += 10) {
-        for (let wy = svgH - h + 8; wy < svgH - 8; wy += 12) {
-          if (Math.random() > 0.4) {
-            const wc = Math.random() > 0.5 ? '#ff6b9d' : '#ffe600';
-            rects += `<rect x="${wx}" y="${wy}" width="5" height="6" fill="${wc}" opacity="0.9"/>`;
-          }
-        }
-      }
-      x += w + 2 + Math.floor(Math.random() * 10);
-    }
-    return { rects, totalWidth: x };
+function doSlap(clickX, clickY) {
+  const SIZE = 88;
+  const hitX = clickX >= tx && clickX <= tx + SIZE;
+  const hitY = clickY >= ty && clickY <= ty + SIZE;
+
+  // Animate a big hand swooping across
+  const hand = document.createElement('div');
+  hand.style.cssText = `
+    position: absolute;
+    font-size: 64px;
+    pointer-events: none;
+    z-index: 30;
+    left: ${clickX - 80}px;
+    top: ${clickY - 40}px;
+    transform: scaleX(-1) rotate(-30deg);
+    transition: transform 0.15s ease-out, left 0.15s ease-out;
+  `;
+  hand.textContent = '🤚';
+  document.getElementById('game-screen').appendChild(hand);
+
+  setTimeout(() => {
+    hand.style.transform = 'scaleX(-1) rotate(20deg)';
+    hand.style.left = (clickX - 20) + 'px';
+  }, 10);
+
+  setTimeout(() => hand.remove(), 300);
+
+  if (hitX && hitY) {
+    combo++;
+    clearTimeout(comboTimeout);
+    comboTimeout = setTimeout(() => { combo = 0; updateCombo(); }, 1500);
+
+    const dmg = combo >= 5 ? 20 : combo >= 3 ? 15 : 10;
+    health = Math.max(0, health - dmg);
+    score += combo >= 5 ? 50 : combo >= 3 ? 20 : 10;
+
+    updateHUD();
+    updateCombo();
+
+    if (combo >= 5) showBubble(['😭', '😢', '🥺', '😩'][Math.floor(Math.random() * 4)]);
+    else if (combo >= 3) showBubble(['😰', '😬', '😟', '🥴'][Math.floor(Math.random() * 4)]);
+
+    spawnSlapEffect(clickX, clickY);
+    flashTarget();
+
+    if (health <= 0) { score += 500; endGame(true); }
+  } else {
+    combo = 0;
+    updateCombo();
+    spawnMiss(clickX, clickY);
+    showBubble(['😝', '🤪', '👅', '😜'][Math.floor(Math.random() * 4)]);
   }
-
-  function makeSVG(rects, totalWidth, svgH, color) {
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="${svgH}" style="position:absolute;bottom:0;height:100%;width:auto;">${rects}</svg>`;
-  }
-
-  // Far layer — slow left scroll
-  const far = makeBuildings(60, 30, 60, 80, 180, '#1a0535', 0, 300);
-  const farSVG = makeSVG(far.rects, far.totalWidth, 300, '#1a0535');
-  const farEl = document.getElementById('city-far');
-  farEl.innerHTML = farSVG + farSVG; // duplicate for seamless loop
-  farEl.style.width = '100vw';
-  farEl.style.overflow = 'hidden';
-
-  // Near layer — slow right scroll  
-  const near = makeBuildings(40, 40, 80, 60, 140, '#0d0518', 0, 160);
-  const nearSVG = makeSVG(near.rects, near.totalWidth, 160, '#0d0518');
-  const nearEl = document.getElementById('city-near');
-  nearEl.innerHTML = nearSVG + nearSVG + nearSVG;
-  nearEl.style.width = '100vw';
-  nearEl.style.overflow = 'hidden';
-
-  // Animate via JS for precise control
-  let farX = 0;
-  let nearX = 0;
-  const farTotal = far.totalWidth;
-  const nearTotal = near.totalWidth;
-
-  function animateCity() {
-    farX -= 0.4;  // slow left
-    nearX += 0.6; // slow right
-
-    if (farX <= -farTotal) farX = 0;
-    if (nearX >= nearTotal) nearX = 0;
-
-    const farSvgs = farEl.querySelectorAll('svg');
-    farSvgs[0].style.left = farX + 'px';
-    farSvgs[1].style.left = (farX + farTotal) + 'px';
-
-    const nearSvgs = nearEl.querySelectorAll('svg');
-    nearSvgs[0].style.left = nearX + 'px';
-    nearSvgs[1].style.left = (nearX - nearTotal) + 'px';
-    if (nearSvgs[2]) nearSvgs[2].style.left = (nearX + nearTotal) + 'px';
-
-    requestAnimationFrame(animateCity);
-  }
-
-  animateCity();
 }
 
-buildCityScape();
+function spawnSlapEffect(x, y) {
+  const texts = combo >= 5 ? ['👋 SLAP!!', 'x'+combo+' COMBO!'] : combo >= 3 ? ['👋 SLAP! x'+combo] : ['👋 SLAP!'];
+  const stars = ['✨','💥','⭐','😵'];
+
+  stars.forEach(() => {
+    const el = document.createElement('div');
+    el.className = 'star-effect';
+    el.textContent = stars[Math.floor(Math.random() * stars.length)];
+    el.style.left = (x + (Math.random()-0.5)*80) + 'px';
+    el.style.top = (y + (Math.random()-0.5)*80) + 'px';
+    document.getElementById('game-screen').appendChild(el);
+    setTimeout(() => el.remove(), 600);
+  });
+
+  texts.forEach((t, i) => {
+    const el = document.createElement('div');
+    el.className = 'hit-effect';
+    el.textContent = t;
+    el.style.left = (x - 40) + 'px';
+    el.style.top = (y - 20 - i*30) + 'px';
+    el.style.color = combo >= 5 ? '#ffe600' : combo >= 3 ? '#ff6b9d' : '#fff';
+    document.getElementById('game-screen').appendChild(el);
+    setTimeout(() => el.remove(), 700);
+  });
+}
+function doPan(clickX, clickY) {
+  const pan = document.createElement('div');
+  pan.style.cssText = `
+    position: absolute;
+    font-size: 64px;
+    pointer-events: none;
+    z-index: 30;
+    left: ${clickX - 80}px;
+    top: ${clickY - 80}px;
+    transform: rotate(-120deg);
+    transition: transform 0.15s ease-out, left 0.15s ease-out, top 0.15s ease-out;
+  `;
+  pan.textContent = '🍳';
+  document.getElementById('game-screen').appendChild(pan);
+
+  setTimeout(() => {
+    pan.style.transform = 'rotate(10deg)';
+    pan.style.left = (clickX - 20) + 'px';
+    pan.style.top = (clickY - 20) + 'px';
+  }, 10);
+
+  setTimeout(() => pan.remove(), 300);
+  checkPanHit(clickX, clickY);
+}
+
+function checkPanHit(clickX, clickY) {
+  const SIZE = 88;
+  const hitX = clickX >= tx && clickX <= tx + SIZE;
+  const hitY = clickY >= ty && clickY <= ty + SIZE;
+
+  if (hitX && hitY) {
+    combo++;
+    clearTimeout(comboTimeout);
+    comboTimeout = setTimeout(() => { combo = 0; updateCombo(); }, 1500);
+    const dmg = combo >= 5 ? 20 : combo >= 3 ? 15 : 10;
+    health = Math.max(0, health - dmg);
+    score += combo >= 5 ? 50 : combo >= 3 ? 20 : 10;
+    updateHUD(); updateCombo();
+    if (combo >= 5) showBubble(['😭','😢','🥺','😩'][Math.floor(Math.random()*4)]);
+    else if (combo >= 3) showBubble(['😰','😬','😟','🥴'][Math.floor(Math.random()*4)]);
+    spawnWeaponEffect(clickX, clickY, '🍳', 'BONK!');
+    flashTarget();
+    if (health <= 0) { score += 500; endGame(true); }
+  } else {
+    combo = 0; updateCombo();
+    spawnMiss(clickX, clickY);
+    showBubble(['😝','🤪','👅','😜'][Math.floor(Math.random()*4)]);
+  }
+}
+
+function doSlipper(clickX, clickY) {
+  const slipper = document.createElement('div');
+  slipper.style.cssText = `
+    position: absolute;
+    font-size: 64px;
+    pointer-events: none;
+    z-index: 30;
+    left: ${clickX - 80}px;
+    top: ${clickY - 80}px;
+    transform: rotate(-120deg);
+    transition: transform 0.15s ease-out, left 0.15s ease-out, top 0.15s ease-out;
+  `;
+  slipper.textContent = '🩴';
+  document.getElementById('game-screen').appendChild(slipper);
+
+  setTimeout(() => {
+    slipper.style.transform = 'rotate(10deg)';
+    slipper.style.left = (clickX - 20) + 'px';
+    slipper.style.top = (clickY - 20) + 'px';
+  }, 10);
+
+  setTimeout(() => slipper.remove(), 300);
+  checkSlipperHit(clickX, clickY);
+}
+
+function checkSlipperHit(clickX, clickY) {
+  const SIZE = 88;
+  const hitX = clickX >= tx && clickX <= tx + SIZE;
+  const hitY = clickY >= ty && clickY <= ty + SIZE;
+
+  if (hitX && hitY) {
+    combo++;
+    clearTimeout(comboTimeout);
+    comboTimeout = setTimeout(() => { combo = 0; updateCombo(); }, 1500);
+    const dmg = combo >= 5 ? 20 : combo >= 3 ? 15 : 10;
+    health = Math.max(0, health - dmg);
+    score += combo >= 5 ? 50 : combo >= 3 ? 20 : 10;
+    updateHUD(); updateCombo();
+    if (combo >= 5) showBubble(['😭','😢','🥺','😩'][Math.floor(Math.random()*4)]);
+    else if (combo >= 3) showBubble(['😰','😬','😟','🥴'][Math.floor(Math.random()*4)]);
+    spawnWeaponEffect(clickX, clickY, '🩴', 'WHACK!');
+    flashTarget();
+    if (health <= 0) { score += 500; endGame(true); }
+  } else {
+    combo = 0; updateCombo();
+    spawnMiss(clickX, clickY);
+    showBubble(['😝','🤪','👅','😜'][Math.floor(Math.random()*4)]);
+  }
+}
+
+function spawnWeaponEffect(x, y, weaponEmoji, word) {
+  const texts = combo >= 5 ? [weaponEmoji+' '+word+'!', 'x'+combo+' COMBO!'] : combo >= 3 ? [weaponEmoji+' '+word+' x'+combo] : [weaponEmoji+' '+word];
+  const stars = ['✨','💥','⭐','💫'];
+
+  stars.forEach(() => {
+    const el = document.createElement('div');
+    el.className = 'star-effect';
+    el.textContent = stars[Math.floor(Math.random()*stars.length)];
+    el.style.left = (x + (Math.random()-0.5)*80) + 'px';
+    el.style.top = (y + (Math.random()-0.5)*80) + 'px';
+    document.getElementById('game-screen').appendChild(el);
+    setTimeout(() => el.remove(), 600);
+  });
+
+  texts.forEach((t, i) => {
+    const el = document.createElement('div');
+    el.className = 'hit-effect';
+    el.textContent = t;
+    el.style.left = (x - 40) + 'px';
+    el.style.top = (y - 20 - i*30) + 'px';
+    el.style.color = combo >= 5 ? '#ffe600' : combo >= 3 ? '#ff6b9d' : '#fff';
+    document.getElementById('game-screen').appendChild(el);
+    setTimeout(() => el.remove(), 700);
+  });
+}
+
+let pendingWeapon = null;
+let pendingWeaponName = null;
+
+function showInGameWeaponSelect() {
+  document.getElementById('pause-menu').style.display = 'none';
+  const panel = document.getElementById('ingame-weapon-select');
+  panel.style.display = 'flex';
+
+  // Highlight current weapon
+  const map = {'🍳':'iw1','🩴':'iw2','🤚':'iw3','💣':'iw4'};
+  document.querySelectorAll('#ingame-weapon-select .weapon-card').forEach(c => c.classList.remove('selected'));
+  if (map[selectedWeapon]) document.getElementById(map[selectedWeapon]).classList.add('selected');
+
+  pendingWeapon = selectedWeapon;
+  pendingWeaponName = selectedWeaponName;
+}
+
+function selectInGameWeapon(emoji, name) {
+  pendingWeapon = emoji;
+  pendingWeaponName = name;
+  const map = {'🍳':'iw1','🩴':'iw2','🤚':'iw3','💣':'iw4'};
+  document.querySelectorAll('#ingame-weapon-select .weapon-card').forEach(c => c.classList.remove('selected'));
+  if (map[emoji]) document.getElementById(map[emoji]).classList.add('selected');
+}
+
+function cancelInGameWeapon() {
+  document.getElementById('ingame-weapon-select').style.display = 'none';
+  document.getElementById('pause-menu').style.display = 'flex';
+  pendingWeapon = null;
+  pendingWeaponName = null;
+}
+
+function confirmInGameWeapon() {
+  if (pendingWeapon) {
+    selectWeapon(pendingWeapon, pendingWeaponName);
+  }
+  document.getElementById('ingame-weapon-select').style.display = 'none';
+  // End current game state cleanly then restart
+  gameRunning = false;
+  cancelAnimationFrame(animFrame);
+  clearInterval(timerInterval);
+  clearTimeout(moveModeTimer);
+  document.getElementById('game-screen').removeEventListener('click', handleClick);
+  document.getElementById('game-screen').removeEventListener('touchstart', handleTouch);
+  startGame();
+}

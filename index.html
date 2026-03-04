@@ -39,13 +39,13 @@
             <div class="weapon-emoji">🍳</div>
             <div class="weapon-name">FRYING PAN</div>
           </div>
-          <div class="weapon-card" onclick="selectWeapon('👟','Tsinelas')" id="w2">
-            <div class="weapon-emoji">👟</div>
+          <div class="weapon-card" onclick="selectWeapon('🩴','Tsinelas')" id="w2">
+            <div class="weapon-emoji">🩴</div>
             <div class="weapon-name">TSINELAS</div>
           </div>
-          <div class="weapon-card" onclick="selectWeapon('🔫','Toy Gun')" id="w3">
-            <div class="weapon-emoji">🔫</div>
-            <div class="weapon-name">TOY GUN</div>
+          <div class="weapon-card" onclick="selectWeapon('🤚','Slap')" id="w3">
+            <div class="weapon-emoji">🤚</div>
+            <div class="weapon-name">SLAP</div>
           </div>
         </div>
 
@@ -95,10 +95,6 @@
 
     <!-- GAME SCREEN -->
     <div id="game-screen">
-      <div class="city-layer-far" id="city-far"></div>
-      <div class="city-layer-near" id="city-near"></div>
-      <div class="city-ground"></div>
-
       <div id="hud">
         <div class="health-bar-container">
           <span>❤️ HP</span>
@@ -124,7 +120,38 @@
           <div class="screen-title">⏸ PAUSED</div>
           <button class="btn" onclick="resumeGame()">▶ RESUME</button>
           <button class="btn" onclick="restartGame()">🔄 PLAY AGAIN</button>
+          <button class="btn" onclick="showInGameWeaponSelect()">⚔️ CHANGE WEAPON</button>
           <button class="btn" onclick="showTitle()">🏠 MAIN MENU</button>
+        </div>
+      </div>
+
+      <div id="ingame-weapon-select" style="display:none; position:absolute; inset:0; background:rgba(13,5,24,0.95); display:none; align-items:center; justify-content:center; z-index:26;">
+        <div class="pixel-border">
+          <div class="screen-title">⚔️ CHOOSE WEAPON</div>
+          <div class="weapon-grid">
+            <div class="weapon-card" onclick="selectInGameWeapon('🍳','Frying Pan')" id="iw1">
+              <div class="weapon-emoji">🍳</div>
+              <div class="weapon-name">FRYING PAN</div>
+            </div>
+            <div class="weapon-card" onclick="selectInGameWeapon('🩴','Tsinelas')" id="iw2">
+              <div class="weapon-emoji">🩴</div>
+              <div class="weapon-name">TSINELAS</div>
+            </div>
+            <div class="weapon-card" onclick="selectInGameWeapon('🤚','Slap')" id="iw3">
+              <div class="weapon-emoji">🤚</div>
+              <div class="weapon-name">SLAP</div>
+            </div>
+          </div>
+          <div class="special-divider"><span>⚠️ SPECIAL WEAPON ⚠️</span></div>
+          <div class="weapon-grid">
+            <div class="weapon-card special-card" onclick="selectInGameWeapon('💣','Bomb')" id="iw4">
+              <div class="weapon-emoji">💣</div>
+              <div class="weapon-name">BOMB</div>
+              <div class="weapon-tag">∞ USES • AOE</div>
+            </div>
+          </div>
+          <button class="btn" onclick="cancelInGameWeapon()">✕ CANCEL</button>
+          <button class="btn" onclick="confirmInGameWeapon()">▶ NEW GAME</button>
         </div>
       </div>
 
